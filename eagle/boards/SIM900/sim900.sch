@@ -14856,6 +14856,7 @@ Source: &lt;a href= "http://www.amphenol.info/downloads/C707_10M006_512_2.pdf"&g
 <part name="C5" library="rcl" deviceset="C-EU" device="C0805K"/>
 <part name="GND13" library="supply1" deviceset="GND" device=""/>
 <part name="R12" library="rcl" deviceset="R-EU_" device="R0805"/>
+<part name="P+3" library="supply1" deviceset="VCC" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -14901,6 +14902,7 @@ Source: &lt;a href= "http://www.amphenol.info/downloads/C707_10M006_512_2.pdf"&g
 <instance part="C5" gate="G$1" x="2.54" y="-76.2"/>
 <instance part="GND13" gate="1" x="2.54" y="-88.9"/>
 <instance part="R12" gate="G$1" x="7.62" y="-60.96" rot="R270"/>
+<instance part="P+3" gate="VCC" x="142.24" y="45.72"/>
 </instances>
 <busses>
 </busses>
@@ -15140,9 +15142,9 @@ Source: &lt;a href= "http://www.amphenol.info/downloads/C707_10M006_512_2.pdf"&g
 <label x="43.18" y="-12.7" size="1.778" layer="95"/>
 </segment>
 <segment>
-<pinref part="U$1" gate="G$1" pin="C2"/>
-<wire x1="106.68" y1="30.48" x2="106.68" y2="20.32" width="0.1524" layer="91"/>
-<label x="106.68" y="20.32" size="1.778" layer="95" rot="R90"/>
+<pinref part="U$1" gate="G$1" pin="C4"/>
+<wire x1="109.22" y1="30.48" x2="109.22" y2="20.32" width="0.1524" layer="91"/>
+<label x="109.22" y="20.32" size="1.778" layer="95" rot="R90"/>
 </segment>
 </net>
 <net name="SDA" class="0">
@@ -15152,9 +15154,9 @@ Source: &lt;a href= "http://www.amphenol.info/downloads/C707_10M006_512_2.pdf"&g
 <label x="43.18" y="-15.24" size="1.778" layer="95"/>
 </segment>
 <segment>
-<pinref part="U$1" gate="G$1" pin="C4"/>
-<wire x1="109.22" y1="30.48" x2="109.22" y2="20.32" width="0.1524" layer="91"/>
-<label x="109.22" y="20.32" size="1.778" layer="95" rot="R90"/>
+<pinref part="U$1" gate="G$1" pin="C2"/>
+<wire x1="106.68" y1="30.48" x2="106.68" y2="20.32" width="0.1524" layer="91"/>
+<label x="106.68" y="20.32" size="1.778" layer="95" rot="R90"/>
 </segment>
 </net>
 <net name="N$8" class="0">
@@ -15286,7 +15288,11 @@ Source: &lt;a href= "http://www.amphenol.info/downloads/C707_10M006_512_2.pdf"&g
 <wire x1="127" y1="38.1" x2="127" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="127" y1="40.64" x2="129.54" y2="40.64" width="0.1524" layer="91"/>
 <junction x="129.54" y="40.64"/>
-<wire x1="129.54" y1="40.64" x2="139.7" y2="40.64" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="P+3" gate="VCC" pin="VCC"/>
+<wire x1="142.24" y1="43.18" x2="142.24" y2="38.1" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="38.1" x2="157.48" y2="38.1" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$11" class="0">
