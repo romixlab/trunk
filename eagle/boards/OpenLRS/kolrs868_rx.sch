@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.5.0">
+<eagle version="6.4">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -12744,6 +12744,7 @@ Library by: &lt;a href="http://projects.weber-itam.de"&gt;http://projects.weber-
 <text x="55.88" y="-17.78" size="2.54" layer="94">Based on Flytron's OpenLRS</text>
 <text x="55.88" y="-22.86" size="2.54" layer="94">(c) Flytron</text>
 <text x="55.88" y="-27.94" size="2.54" layer="94">(c) kolin</text>
+<text x="55.88" y="-33.02" size="2.54" layer="94">(c) romix.lab</text>
 </plain>
 <instances>
 <instance part="J1" gate="G$1" x="60.96" y="5.08" smashed="yes">
