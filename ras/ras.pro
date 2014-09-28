@@ -5,8 +5,8 @@ QT += qml quick
 LIBS += -lpgm
 
 SOURCES += main.cpp \
-    pgmnetwork.cpp \
-    test.cpp
+    test.cpp \
+    pgm_rx.cpp
 
 RESOURCES += qml.qrc
 
@@ -17,5 +17,5 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    pgmnetwork.h \
-    test.h
+    test.h \
+    pgm_rx.h
