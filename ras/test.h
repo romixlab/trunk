@@ -2,7 +2,10 @@
 #define TEST_H
 
 #include <QObject>
-#include "pgm_rx.h"
+
+
+class PGMNetwork;
+class pgm_tx;
 
 struct pgm_sock_t;
 
@@ -23,7 +26,8 @@ private:
     bool startPGM();
 
     PGMNetwork *net;
-    QThread *thread;
+    pgm_tx *m_tx;
+    QThread *thread, *tx_thread;
 
     pgm_sock_t *m_socket;
 

@@ -2,11 +2,12 @@ TEMPLATE = app
 
 QT += qml quick
 
-LIBS += -lpgm
+QMAKE_CXXFLAGS += -std=c++11
+
+LIBS += -lqmsgpack
 
 SOURCES += main.cpp \
-    test.cpp \
-    pgm_rx.cpp
+    localdiscoveryservice.cpp
 
 RESOURCES += qml.qrc
 
@@ -16,6 +17,7 @@ QML_IMPORT_PATH =
 # Default rules for deployment.
 include(deployment.pri)
 
-HEADERS += \
-    test.h \
-    pgm_rx.h
+HEADERS += localdiscoveryservice.h \
+    discoveryservicebase.h \
+    automation_global.h \
+    automation_export.h

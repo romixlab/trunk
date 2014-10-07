@@ -5,7 +5,10 @@
 #include <QCoreApplication>
 
 #include <pgm/pgm.h>
-#	include <unistd.h>
+#include <unistd.h>
+
+#include "pgm_rx.h"
+#include "pgm_tx.h"
 
 test::test(QObject *parent) :
     QObject(parent)
@@ -28,16 +31,19 @@ connect(QCoreApplication::instance(), SIGNAL(aboutToQuit()),
 
     net = new PGMNetwork;
     net->setPgmSocket(m_socket);
-
-    thread = new QThread;
+    thread = new QThread(this);
     net->moveToThread(thread);
-
     connect(net, SIGNAL(rx(QByteArray)), this, SLOT(onRx(QByteArray)));
     connect(thread, SIGNAL(started()), net, SLOT(doWork()));
     //connect(net, SIGNAL(finished()), thread, SLOT(quit()));
-
-
     thread->start();
+
+    m_tx = new pgm_tx();
+    m_tx->setPgmSocket(m_socket);
+    tx_thread = new QThread(this);
+    m_tx->moveToThread(tx_thread);
+    connect(tx_thread, SIGNAL(started()), m_tx, SLOT(doWork()));
+    tx_thread->start();
 
 }
 
@@ -50,9 +56,16 @@ void test::onAboutToQuit()
 {
     net->stop();
     if (!thread->wait(5000)) {
-        qWarning() << "Thread deadlock detected, terminating it";
+        qWarning() << "Thread (rx) deadlock detected, terminating it";
         thread->terminate();
         thread->wait();
+    }
+
+    m_tx->stop();
+    if (!tx_thread->wait(5000)) {
+        qWarning() << "Thread (tx) deadlock detected, terminating it";
+        tx_thread->terminate();
+        tx_thread->wait();
     }
 
     if (m_socket) {
@@ -74,7 +87,7 @@ bool test::startPGM()
 
     // parse network parameter into PGM socket address structure
     if (!pgm_getaddrinfo("eth0;239.192.0.1", NULL, &res, &pgm_err)) {
-        qWarning() << "Parsing network parameter: %s\n" << pgm_err->message;
+        qWarning() << "Parsing network parameter:" << pgm_err->message;
         pgm_error_free (pgm_err);
         return false;
     }
@@ -294,13 +307,14 @@ bool test::startPGM()
     }
     pgm_freeaddrinfo (res);
 
-    // set IP parameters
+    // set IP parameters ************
     const int nonblocking	   = 1,
+            multicast_loop = 1,
             multicast_direct = 0,
             multicast_hops   = 16,
             dscp		   = 0x2e << 2;	/* Expedited Forwarding PHB for network elements, no ECN. */
 
-    if (!pgm_setsockopt (m_socket, IPPROTO_PGM, PGM_MULTICAST_LOOP, &multicast_direct, sizeof(multicast_direct))) {
+    if (!pgm_setsockopt (m_socket, IPPROTO_PGM, PGM_MULTICAST_LOOP, &multicast_loop, sizeof(multicast_loop))) {
         qWarning() << "setting PGM_MULTICAST_LOOP" << multicast_direct << "failed";
         return false;
     }
@@ -316,6 +330,12 @@ bool test::startPGM()
     }
     if (!pgm_setsockopt (m_socket, IPPROTO_PGM, PGM_NOBLOCK, &nonblocking, sizeof(nonblocking))) {
         qWarning() << "setting PGM_NOBLOCK" << nonblocking << "failed";
+        return false;
+    }
+
+    if (!pgm_connect (m_socket, &pgm_err)) {
+        qDebug() << "Connecting PGM socket:" << pgm_err->message;
+        pgm_error_free(pgm_err);
         return false;
     }
 

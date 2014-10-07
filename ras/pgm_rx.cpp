@@ -4,17 +4,13 @@
 #include <QThread>
 #include <QCoreApplication>
 #include <QByteArray>
-
-// OpenPGM
 #include <pgm/pgm.h>
 
 
 PGMNetwork::PGMNetwork(QObject *parent) :
     QObject(parent), m_is_terminated(false)
 {
-    m_terminate_pipe[0] = 0;
-    m_terminate_pipe[1] = 0;
-    m_terminate_pipe[2] = 0;
+    pipe(m_terminate_pipe);
 }
 
 void PGMNetwork::setPgmSocket(pgm_sock_t *socket)
