@@ -3,34 +3,26 @@
 
 #include <QObject>
 
+class TestPrivate;
 
-class PGMNetwork;
-class pgm_tx;
-
-struct pgm_sock_t;
-
-class QThread;
-
-class test : public QObject
+class Test : public QObject
 {
-    Q_OBJECT
 public:
-    explicit test(QObject *parent = 0);
+    explicit Test(QObject *parent = 0);
+
+    void e();
+
+
+    virtual const QMetaObject * metaObject() const;
+    int qt_metacall(QMetaObject::Call call, int, void **);
+    virtual void *qt_metacast(const char *name);
+
+signals:
 
 public slots:
-    void onRx(const QByteArray &data);
 
-private slots:
-    void onAboutToQuit();
 private:
-    bool startPGM();
-
-    PGMNetwork *net;
-    pgm_tx *m_tx;
-    QThread *thread, *tx_thread;
-
-    pgm_sock_t *m_socket;
-
+    TestPrivate *d;
 };
 
 #endif // TEST_H
