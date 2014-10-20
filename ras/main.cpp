@@ -12,22 +12,29 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    ToCatch t;
-    Test t2;
+    // *** signal catch add remove below ***
+//    ToCatch t;
+//    Test t2;
 
-   // qDebug() << t.metaObject()->methodOffset();
-//    for (int i = t.metaObject()->methodOffset(); i < t.metaObject()->methodCount(); ++i) {
-//        qDebug() << t.metaObject()->method(i).methodType();
-//    }
+//    QObject::connect(&t2, SIGNAL(catched(QString, QVariantList)), &t, SLOT(s(QString, QVariantList)));
 
-// //   qDebug() << t2.metaObject()->methodOffset();
-//    for (int i = t2.metaObject()->methodOffset(); i < t2.metaObject()->methodCount(); ++i) {
-//        qDebug() << t2.metaObject()->method(i).methodType();
-//    }
+//    t2.addSlot(SLOT(my_slot(int)));
+//    QObject::connect(&t, SIGNAL(sig(int)), &t2, SLOT(my_slot(int)));
+//    t.e();
+//    qDebug() << "---------";
+//    t2.removeSlot(SLOT(my_slot(int)));
+//    t.e();
+//    qDebug() << "---------";
+//    t2.addSlot(SLOT(my_slot(int)));
+//    QObject::connect(&t, SIGNAL(sig(int)), &t2, SLOT(my_slot(int)));
+//    t.e();
 
-    QObject::connect(&t, SIGNAL(sig()), &t2, SLOT(sl()));
-    t.e();
 
+    ToCatch c;
+    Test t;
+    t.addSignal(SIGNAL(sig(int,QString)));
+    QObject::connect(&t, SIGNAL(sig(int,QString)), &c, SLOT(sl(int,QString)));
+    t.activateSignal("sig", QVariantList() << 12.3 << 123);
 //    LocalDiscoveryService lds;
 //    lds.setMulticastGroup(QHostAddress(QCoreApplication::arguments().at(1)));
 //    lds.setNodeInfo(QCoreApplication::arguments().at(2), QStringList() << "gr1" << "gr2", "addr");

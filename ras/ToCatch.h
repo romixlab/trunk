@@ -10,15 +10,23 @@ class ToCatch : public QObject
 public:
     ToCatch(QObject *parent = 0) : QObject(parent) {}
 
-    void e() { emit sig(); }
+    void e() { emit sig(753); }
 signals:
-    void sig();
+    void sig(int a);
+
 
     public slots:
         void slot() {
 qDebug() << "normal slot called";
         }
 
+        void sl(int a, const QString &b) {
+            qDebug() << "slot called" << a << b;
+        }
+
+void s(const QString &name, const QVariantList &v) {
+    qDebug() << "catch" << name << v;
+}
 };
 
 #endif // TOCATCH_H
