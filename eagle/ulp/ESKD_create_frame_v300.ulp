@@ -1,0 +1,744 @@
+#usage "en: nobr<b>ESKD Creat frames</b>\n"
+
+#include "font0.ulp"
+#include "utf8.ulp"
+
+
+string cmd = "";
+string Version = "Version 3.0.0";
+
+//int nCodes = 224;
+int firstChar;
+
+string encode_value(string str)
+{
+	int i,j;
+	string buf, result[];
+	for (i = 0; i < strlen(str); i++) 
+	{
+		string c = strsub(str, i, 1);
+		int code = 63;
+		for (j = 0; j < nCodes*2; j+=2) 
+		{
+			if (codes[j] ==c) 
+			{
+				code = strtol(codes[j+1]);
+				break;
+			}
+		}
+		code -= firstChar;
+		sprintf(buf, "%u", code);
+		result[i] = buf;
+	}
+	return strjoin(result, '|');
+}
+
+string decode_value(string str)
+{
+	int i,j,n;
+	string buf, parts[];
+	if (str == "") return "";
+	n = strsplit(parts, str, '|');
+	for (i = 0; i < n; i++) 
+	{
+		string c = parts[i];
+		string next = "?";
+		for (j = 0; j < nCodes*2; j+=2) 
+		{
+			if (codes[j+1] ==c) 
+			{
+				next = codes[j];
+				break;
+			}
+		}
+		buf += next;
+	}
+	return buf;
+}
+
+string default_value(string key, string value)
+{
+	schematic(S) {
+		S.attributes(A) {
+			if (strupr(A.name) == strupr(key)) return decode_value(A.value);
+		}
+	}
+	return value;
+}
+
+void store_value(string key, string value)
+{
+	string c;
+	sprintf(c, "ATTRIBUTE * %s '%s';\n", key, encode_value(value));
+	cmd += c;
+}
+
+
+// Данные о чертеже
+string number = default_value("eskd_number", "АБВГ 194000.001 Э3");
+string description1 = default_value("eskd_description1", "Термостат");
+string description2 = default_value("eskd_description2", "схема электрическая");
+string description3 = default_value("eskd_description3", "принципиальная");
+string copyright = default_value("eskd_copyright", "200800");
+
+// Данные о инженере, проверяющем, и т.д.
+string engineer = default_value("eskd_engineer", "");
+string checked = default_value("eskd_checked", "");
+string engineerT = default_value("eskd_engineerT", "");
+string engineerN = default_value("eskd_engineerN", "");
+string confirm = default_value("eskd_confirm", "");
+string date2 = default_value("eskd_date2", "");
+string date3 = default_value("eskd_date3", "");
+string date4 = default_value("eskd_date4", "");
+string date5 = default_value("eskd_date5", "");
+string date1 = default_value("eskd_date1", "31.12.2010");
+string number_sheet = default_value("eskd_number_sheet", "1");
+string sheets = default_value("eskd_sheets", "1");
+
+// Не изменяемые данные.
+string not_changed_change = "Изм.";
+string not_changed_list = "Лиcт";
+string not_changed_Ndocument = "№ докум.";
+string not_changed_signature = "Подп.";
+string not_changed_date = "Дата";
+string not_changed_developed = "Разраб.";
+string not_changed_checked = "Пров.";
+string not_changed_engineerT = "Т. констр.";
+string not_changed_engineerN = "Н. констр.";
+string not_changed_confirm = "Утв.";
+string not_changed_letter = "Лит.";
+string not_changed_weight = "Масса";
+string not_changed_scale = "Масштаб";
+string not_changed_sheets = "Листов";
+string not_changed_scale_value = "1:1";
+
+// Формат листа.
+string papersize[] = {"A4", "A3", "A2"};
+int papersize_select = 0;
+string orientation[] = {"P", "L"};
+int orientation_select = 0;
+int width = 0, height = 0;
+int x = 0, y = 0;
+int clearance = 5;
+int clearanceL = 20;
+
+
+
+real size;
+string str;
+int i, j;
+int fontNumber = 0;
+int rotation = 0;
+int mirror = 0;
+string draw[];
+string widths[];
+int capital;
+real startX;
+real startY;
+
+
+
+// Строка содержащая в себе текст помещяемый в окно с информацией о версиях.
+string About = "<nobr>" +
+		"<table cellpadding = 5, border = 0, bgcolor = #e8e8e8>" +
+		"<tr>" +
+		"<td>" +
+		"<b>ESKD Create frame v1.0</b><br>"+
+		"&deg; Заполняет необходимые ячейки данными.<br>"+
+		"&deg; Только для формата А4<br>"+
+		"&deg; Только латинскими буквами.<br>"+
+		"<p>" +
+		"<b>ESKD Create frame v2.0</b><br>"+
+		"&deg; Создаёт лист формата А4, А3, А2 как в портретной,<br>"+
+		"&nbsp;&nbsp; так и в ландшафтной ориентации.<br>"+
+		"&deg; Для формата листа А4 расположение основной<br>"+
+		"&nbsp;&nbsp; надписи возможно только по короткой стороне!<br>"+
+		"&deg; Заполняет необходимые ячейки данными.<br>"+
+		"&deg; Только латинскими буквами.<br>"+
+		"<p>" +
+		"<b>ESKDCreate frame v2.0.1</b><br>"+
+		"&deg; После составления формата листа возвращает значение<br>"+
+		"&nbsp;&nbsp; сетки к значениям по умолчанию.<br>"+
+		"<p>" +
+		"<b>ESKDCreate frame v3.0.0</b><br>"+
+		"&deg; Создаёт лист формата А4, А3, А2 как в портретной,<br>"+
+		"&nbsp;&nbsp; так и в ландшафтной ориентации.<br>"+
+		"&deg; Для формата листа А4 расположение основной<br>"+
+		"&nbsp;&nbsp; надписи возможно только по короткой стороне!<br>"+
+		"&deg; Заполняет необходимые ячейки данными.<br>"+
+		"&deg; Поддержка русского языка.<br>"+
+		"&deg; После составления формата листа возвращает значение<br>"+
+		"&nbsp;&nbsp; сетки к предыдущим значениям.<br>"+
+		"</td>" +
+		"<td align = right>" +
+		"<img src=roboforum_logo.png>" +
+		"<p>" +
+		"Отдельное спасибо Тараненко Сергею <br>"+
+		"за создание замечательного форума.<br>"+
+		"</td>" +
+		"</tr>" +
+		"<tr>" +
+		"<td align = right  colspan = 2>" +
+		"<author>Разработано совместно с <b><u>http://roboforum.ru</u></b></author><br>"+
+		"<author>Автор идеи: <b>Курмис Александр.</b></author><br>" +
+		"<author>Автор русского текста: <b>Деменев Андрей.</b></author><br>" +
+		"<author>Автор воплотитель: <b>Рагозин Роман.</b></author><br>" +
+		"</td>" +
+		"</tr>" +
+		"</table>" +
+		"</nobr>";
+
+
+// Функция определения размеров листа.
+void paper_size (int papersize, int orientation)
+{
+	switch(papersize)
+	{
+		case 0: switch(orientation)	// A4
+			{
+				case 0: width = 210; height = 297; break;
+				case 1: width = 210; height = 297; break;
+			}
+			break;
+		case 1: switch(orientation)	// A3
+			{
+				case 0: width = 420; height = 297; break;
+				case 1: width = 297; height = 420; break;
+			}
+			break;
+		case 2: switch(orientation)	// A2
+			{
+				case 0: width = 594; height = 420; break;
+				case 1: width = 420; height = 594; break;
+			}
+			break;
+	}
+}
+
+// Функция выбирает тип, ширину и изгиб линии или текста.
+void StyleLine(int change_style, int change_width, int bend)
+{
+	string c;
+	switch(change_style)
+	{
+		case 0: sprintf(c, "CHANGE STYLE Continuous;"); 		// Сплошная линия.	
+			cmd += c;
+			break;
+		case 1: sprintf(c, "CHANGE STYLE LongDash;"); 		// Пунктр длинный.	
+			cmd += c;
+			break;
+		case 2: sprintf(c, "CHANGE STYLE ShortDash;"); 		// Пунктир короткий.	
+			cmd += c;
+			break;
+		case 3: sprintf(c, "CHANGE STYLE DashDot;"); 		// Пунктир с точкой.	
+			cmd += c;
+			break;
+		default: break;
+	}
+	switch(change_width)
+	{
+		case 0: sprintf(c, "CHANGE WIDTH 0.1;"); 		// Ширина линии 0.1.	
+			cmd += c;
+			break;
+		case 1: sprintf(c, "CHANGE WIDTH 0.254;"); 		// Ширина линии 0.254.	
+			cmd += c;
+			break;
+		case 2: sprintf(c, "CHANGE WIDTH 0.5;"); 		// Ширина линии 0.5.	
+			cmd += c;
+			break;
+		default: break;
+	}
+	sprintf(c, "SET WIRE_BEND %d;", bend);
+	cmd += c;
+}
+
+
+real translate(int x, int size)
+{
+	return (real(x) / capital) * size;
+}
+
+real translateX(real x, real y)
+{
+	if (rotation == 1) 
+	{
+		if (mirror) 
+		{
+			return y;
+		}
+		return -y;
+	}
+	if (rotation == 2) 
+	{
+		return -x;
+	}
+	if (rotation == 3) 
+	{
+		if (mirror) 
+		{
+			return -y;
+		}
+		return y;
+	}
+	return x;
+}
+
+real translateY(real x, real y)
+{
+	if (rotation == 1) 
+	{
+		return x;
+	}
+	if (rotation == 2) 
+	{
+		if (mirror) 
+		{
+			return y;
+		}
+		return -y;
+	}
+	if (rotation == 3) 
+	{
+		return -x;
+	}
+	if (mirror) 
+	{
+		return -y;
+	}
+	return y;
+}
+
+// Функция преобразующая русский текст в линии.
+void parse (string str, real startX, real startY, real size)
+{
+for (i = 0; i < strlen(str); i++) 
+{
+	string c = strsub(str, i, 1);
+	int code = 63;
+	for (j = 0; j < nCodes*2; j+=2) 
+	{
+		if (codes[j] ==c) 
+		{
+			code = strtol(codes[j+1]);
+			break;
+		}
+	}
+	code -= firstChar;
+	int width = strtol(widths[code]);
+	string parts[];
+	int nParts = strsplit(parts, draw[code], '*');
+	real curX = startX;
+	real curY = startY;
+	for (j = 0; j < nParts; j++) 
+	{
+		string command[];
+		strsplit(command, parts[j], '|');
+		int x = strtol(command[1]);
+		int y = strtol(command[2]);
+		if (command[0] == "D") 
+		{
+			string buf;
+			real tempX = startX + translate(x, size);
+			real tempY =  startY + translate(y, size);
+			sprintf(buf, "WIRE (R %f %f) (R %f %f);", translateX(curX, curY), translateY(curX, curY), translateX(tempX, tempY), translateY(tempX, tempY));
+			cmd += buf;
+		}
+		curX = startX + translate(x, size);
+		curY = startY + translate(y, size);
+	}
+	startX += translate(width, size);
+}
+}
+
+
+
+
+
+
+
+// Функция чертит границу листа.
+void training_border_sheet(void)
+{
+	string c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x, y, x, y + height);		// Вертикальная левая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x, y + height, x + width, y + height);	// Горизонтальная верхняя линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + width, y + height, x + width, y);	// Вертикальная правая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + width, y, x, y);			// Горизонтальная нижняя линия.
+	cmd += c;
+}
+// Функция чертит внешний контур листа (рамку).
+void training_external_contour(void)
+{
+	string c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL, y + clearance, x + clearanceL, height - clearance);		// Вертикальная левая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL, height - clearance, width - clearance, height - clearance);	// Горизонтальная верхняя линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance, height - clearance, width - clearance, y + clearance);	// Вертикальная правая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance, y + clearance, x + clearanceL, y + clearance);		// Горизонтальная нижняя линия.
+	cmd += c;
+}
+// Функция чертит внутренний маленький контур под перевёрнутый децимальный номер.
+void training_internal_small_contour(void)
+{
+	string c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL, height - clearance, x + clearanceL + 60, height - clearance);		// Вертикальная левая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL + 60, height - clearance, x + clearanceL + 60, height - clearance - 15);	// Горизонтальная верхняя линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL + 60, height - clearance - 15, x + clearanceL, height - clearance - 15);	// Вертикальная правая линия.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",x + clearanceL, height - clearance - 15, x + clearanceL, height - clearance);		// Горизонтальная нижняя линия.
+	cmd += c;
+}
+// Функция xертит основную надпись.
+void training_main_label(void)
+{
+	string c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance, width - clearance - 185, y + clearance + 55);	// Вертикальная левая линия контура.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 55, width - clearance, y + clearance + 55);	// Горизонтальная верхняя линия контура.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance, y + clearance + 55, width - clearance, y + clearance);		// Вертикальная правая линия контура.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance, y + clearance, width - clearance - 185, y + clearance);		// Горизонтальная нижняя линия контура.
+	cmd += c;
+	// Широкие горизонтальные линии начиная с верхнеё.
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 120, y + clearance + 40, width - clearance, y + clearance + 40);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 35, width - clearance - 120, y + clearance + 35);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 50, y + clearance + 35, width - clearance, y + clearance + 35);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 30, width - clearance - 120, y + clearance + 30);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 50, y + clearance + 20, width - clearance, y + clearance + 20);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 120, y + clearance + 15, width - clearance, y + clearance + 15);	// Широкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	// Широкие вертикальные линии начиная с левой.
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 178, y + clearance + 55, width - clearance - 178, y + clearance + 30);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 168, y + clearance + 55, width - clearance - 168, y + clearance);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 145, y + clearance + 55, width - clearance - 145, y + clearance);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 130, y + clearance + 55, width - clearance - 130, y + clearance);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 120, y + clearance + 55, width - clearance - 120, y + clearance);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 50, y + clearance + 40, width - clearance - 50, y + clearance);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 35, y + clearance + 40, width - clearance - 35, y + clearance + 20);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 30, y + clearance + 20, width - clearance - 30, y + clearance + 15);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 18, y + clearance + 40, width - clearance - 18, y + clearance + 20);	// Широкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	// Выбираем тип, ширину и изгиб линии для внешнего контура листа (рамки).
+	StyleLine(0,0,0);
+	// Узкие горизонтальные линии начиная с верхнеё.
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 50, width - clearance - 120, y + clearance + 50);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 45, width - clearance - 120, y + clearance + 45);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 40, width - clearance - 120, y + clearance + 40);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 25, width - clearance - 120, y + clearance + 25);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 20, width - clearance - 120, y + clearance + 20);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 15, width - clearance - 120, y + clearance + 15);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 10, width - clearance - 120, y + clearance + 10);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 185, y + clearance + 5, width - clearance - 120, y + clearance + 5);	// Узкая горизонтальная линия внутри контура основной надписи.
+	cmd += c;
+	// Узкие вертикальные линии начиная с левой.
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 45, y + clearance + 35, width - clearance - 45, y + clearance + 20);	// Узкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+	sprintf(c, "WIRE (R %d %d) (R %d %d);",width - clearance - 40, y + clearance + 35, width - clearance - 40, y + clearance + 20);	// Узкая вертикальная линия внутри контура основной надписи.
+	cmd += c;
+}
+
+
+void training_sheet(void)
+{
+
+	// Выбираем тип, ширину и изгиб линии для границы листа.
+	StyleLine(2,0,0);
+	// Чертим границу листа. 
+	training_border_sheet();
+
+	// Выбираем тип, ширину и изгиб линии для внешнего контура листа (рамки).
+	StyleLine(0,2,0);
+	// Чертим внешний контур листа (рамку).
+	training_external_contour();
+
+	// Выбираем тип, ширину и изгиб линии для внутреннего маленького контура под перевёрнутый децимальный номер.
+	StyleLine(0,2,0);
+	// Чертим внутренний маленький контур под перевёрнутый децимальный номер.
+	training_internal_small_contour();
+	// Чертим основную надпись.
+	training_main_label();
+
+}
+
+// Заполняем поля не изменяемыми данными. Вид (поле, координата "x", координата "y", размер шрифта)
+void filling_forms_not_changed(void)
+{
+	// Выбираем тип, ширину и изгиб линии для текста.
+	StyleLine(0,1,2);
+	parse(not_changed_change, (width - clearance - 184), (y + clearance + 31), 2.5);	// Пишем "Изм.".
+	parse(not_changed_list, (width - clearance - 177), (y + clearance + 31), 2.5);		// Пишем "Лист".
+	parse(not_changed_Ndocument, (width - clearance - 164), (y + clearance + 31), 2.5);	// Пишем "№ докум.".
+	parse(not_changed_signature, (width - clearance - 142), (y + clearance + 31), 2.5);	// Пишем "Подп.".
+	parse(not_changed_date, (width - clearance - 129), (y + clearance + 31), 2.5);		// Пишем "Дата".
+	parse(not_changed_developed, (width - clearance - 184), (y + clearance + 26), 2.5);	// Пишем "Разраб.".
+	parse(not_changed_checked, (width - clearance - 184), (y + clearance + 21), 2.5);	// Пишем "Пров.".
+	parse(not_changed_engineerT, (width - clearance - 184), (y + clearance + 16), 2.5);	// Пишем "Т. констр.".
+	parse(not_changed_engineerN, (width - clearance - 184), (y + clearance + 6), 2.5);	// Пишем "Н. констр.".
+	parse(not_changed_confirm, (width - clearance - 184), (y + clearance + 1), 2.5);	// Пишем "Утв.".
+	parse(not_changed_letter, (width - clearance - 46), (y + clearance + 36), 2.5);		// Пишем "Лит.".
+	parse(not_changed_weight, (width - clearance - 31), (y + clearance + 36), 2.5);		// Пишем "Масса".
+	parse(not_changed_scale, (width - clearance - 16), (y + clearance + 36), 2.5);		// Пишем "Масштаб".
+	parse(not_changed_list, (width - clearance - 48), (y + clearance + 16), 2.5);		// Пишем "Лист.".
+	parse(not_changed_sheets, (width - clearance - 28), (y + clearance + 16), 2.5);		// Пишем "Листов".
+	parse(not_changed_scale_value, (width - clearance - 13), (y + clearance + 24), 5);	// Пишем "1:1.".
+}
+
+// Заполняем поля данными. Вид (поле, координата "x", координата "y", размер шрифта)
+void filling_forms(void)
+{
+	// Выбираем тип, ширину и изгиб линии для текста децимального номера.
+	StyleLine(0,2,2);
+	parse(number, (width - clearance - 117), (y + clearance + 42), 8);			// Пишем "Децимальный номер чертежа".
+	rotation = 2;								// Задаём ориентацию 180 градусов.
+	parse(number, (clearanceL - 99), (-height + clearance + 5), 4);			// Пишем "Децимальный номер чертежа перевёрнутый".
+	rotation = 0;								// Задаём ориентацию 0 градусов.
+	// Выбираем тип, ширину и изгиб линии для текста левой части основной надписи.
+	StyleLine(0,1,2);
+	parse(engineer, (width - clearance - 167), (y + clearance + 26), 2.5);		// Пишем "Фамилия разработчика чертежа".
+	parse(checked, (width - clearance - 167), (y + clearance + 21), 2.5);			// Пишем "Фамилия проверяющего чертёж".
+	parse(engineerT, (width - clearance - 167), (y + clearance + 16), 2.5);		// Пишем "Фамилия Т. конструктора чертежа ".
+	parse(engineerN, (width - clearance - 167), (y + clearance + 6), 2.5);		// Пишем "Фамилия Н. конструктора чертежа".
+	parse(confirm, (width - clearance - 167), (y + clearance + 1), 2.5);			// Пишем "Фамилия утвердившего чертёж".
+	parse(date1, (width - clearance - 129), (y + clearance + 26), 1.5);			// Пишем "Дату составления чертежа".
+	parse(date2, (width - clearance - 129), (y + clearance + 21), 1.5);			// Пишем "Дату проверки чертежа".
+	parse(date3, (width - clearance - 129), (y + clearance + 16), 1.5);			// Пишем "Дату проверки чертежа Т. конструктором".
+	parse(date4, (width - clearance - 129), (y + clearance + 6), 1.5);			// Пишем "Дату проверки чертежа Н. конструктором".
+	parse(date5, (width - clearance - 129), (y + clearance + 1), 1.5);			// Пишем "Дату утверждения чертежа".
+	parse(number_sheet, (width - clearance - 36), (y + clearance + 16), 2.5);		// Пишем "Номер листа проекта".
+	parse(sheets, (width - clearance - 6), (y + clearance + 16), 2.5);			// Пишем "Всего листов проекта".
+	// Выбираем тип, ширину и изгиб линии для текста центральной части основной надписи.
+	StyleLine(0,2,2);
+	parse(description1, (width - clearance - 117), (y + clearance + 30), 7);		// Пишем "Название чертежа".
+	// Выбираем тип, ширину и изгиб линии для текста центральной части основной надписи.
+	StyleLine(0,1,2);
+	parse(description2, (width - clearance - 117), (y + clearance + 23), 4);		// Пишем "Описание чертежа строка 1".
+	parse(description3, (width - clearance - 115), (y + clearance + 17), 5);		// Пишем "Описание чертежа строка 2".
+	parse(copyright, (width - clearance - 48), (y + clearance + 2), 8);			// Пишем "Копирайт".
+}
+
+// Функция выводящая на экран окно с информацией о версиях.
+void info(void) {
+  dlgDialog("ESKD Creat frame About") {
+    dlgHBoxLayout {
+      dlgVBoxLayout {
+        dlgLabel(About);
+        dlgStretch(1);
+        dlgHBoxLayout {
+          dlgStretch(1);
+          dlgPushButton("+Ok") dlgAccept();
+          dlgStretch(1);
+        }
+      }
+    }
+  };
+  return;
+}
+// Осуществляем проверку на предмет запуска редактора схем, а не плат или не библиотек.
+if (schematic) schematic(S)
+{
+//Окно диалога с пользователем.
+int result = dlgDialog("ESKD Creat frames"){
+
+dlgHBoxLayout 
+	{	
+dlgGroup("Данные чертежа.")
+	{
+	dlgGridLayout 
+		{
+		dlgCell(  1, 1) dlgLabel("&№ децимальный.");
+		dlgCell(  1, 2) dlgStringEdit(number);
+		dlgCell(  2, 1) dlgLabel("&Название.");
+		dlgCell(  2, 2) dlgStringEdit(description1);
+		dlgCell(  3, 2) dlgStringEdit(description2);
+		dlgCell(  4, 2) dlgStringEdit(description3);
+		dlgCell(  5, 1) dlgLabel("&Копирайт.");
+		dlgCell(  5, 2) dlgStringEdit(copyright);
+		}
+	}
+dlgGroup("Настроки листа.")
+		{
+			dlgLabel("Формат листа.");
+			dlgComboBox(papersize, papersize_select);
+
+			dlgGroup("Ориентация.")
+			{
+				dlgRadioButton("&Ландшафтная.", orientation_select);
+				dlgRadioButton("&Портретная.", orientation_select);
+			}
+
+		}
+}
+
+dlgGroup("Данные о разработке и проверке.")
+	{
+	dlgGridLayout 
+		{
+		dlgCell(  1, 1) dlgLabel("&Разработал.");
+		dlgCell(  1, 2) dlgStringEdit(engineer);
+		dlgCell(  1, 3) dlgLabel("&Дата.");
+		dlgCell(  1, 4) dlgStringEdit(date1);
+
+		dlgCell(  2, 1) dlgLabel("&Проверил.");
+		dlgCell(  2, 2) dlgStringEdit(checked);
+		dlgCell(  2, 3) dlgLabel("&Дата.");
+		dlgCell(  2, 4) dlgStringEdit(date2);
+
+		dlgCell(  3, 1) dlgLabel("&Т. констр.");
+		dlgCell(  3, 2) dlgStringEdit(engineerT);
+		dlgCell(  3, 3) dlgLabel("&Дата.");
+		dlgCell(  3, 4) dlgStringEdit(date3);
+
+		dlgCell(  4, 1) dlgLabel("&Н. констр.");
+		dlgCell(  4, 2) dlgStringEdit(engineerN);
+		dlgCell(  4, 3) dlgLabel("&Дата.");
+		dlgCell(  4, 4) dlgStringEdit(date4);
+
+		dlgCell(  5, 1) dlgLabel("&Утв.");
+		dlgCell(  5, 2) dlgStringEdit(confirm);
+		dlgCell(  5, 3) dlgLabel("&Дата.");
+		dlgCell(  5, 4) dlgStringEdit(date5);
+
+		dlgCell(  6, 1) dlgLabel("&Лист.");
+		dlgCell(  6, 2) dlgStringEdit(number_sheet);
+		dlgCell(  6, 3) dlgLabel("&Листов.");
+		dlgCell(  6, 4) dlgStringEdit(sheets);
+		}
+
+}
+dlgHBoxLayout {
+        dlgStretch(1);
+        dlgLabel(Version);
+      }
+          dlgHBoxLayout
+	{
+		dlgStretch(0);
+		dlgPushButton("+Ok") dlgAccept();
+		dlgPushButton("Reset") dlgReset();
+		dlgPushButton("-Cancel") dlgReject();
+		dlgPushButton("about") info();
+	}
+  };
+
+
+
+// Продолжаем если хотя бы одно поле данных содержит данные.
+if (!result) exit(0);
+
+
+store_value("eskd_number", number);
+store_value("eskd_description1", description1);
+store_value("eskd_description2", description2);
+store_value("eskd_description3", description3);
+store_value("eskd_copyright", copyright);
+
+store_value("eskd_engineer", engineer);
+store_value("eskd_checked", checked);
+store_value("eskd_engineerT", engineerT);
+store_value("eskd_engineerN", engineerN);
+store_value("eskd_confirm", confirm);
+store_value("eskd_date2", date2);
+store_value("eskd_date3", date3);
+store_value("eskd_date4", date4);
+store_value("eskd_date5", date5);
+store_value("eskd_date1", date1);
+store_value("eskd_number_sheet", number_sheet);
+store_value("eskd_sheets", sheets);
+
+if (fontNumber == 0) {
+	capital = capital_0;
+	firstChar = firstChar_0;
+	strsplit(widths, widths_0, ',');
+	strsplit(draw, draw_0, '!');
+}
+
+	string c;
+	// Сетка, разрешение 1 миллиметр, видима.
+	sprintf(c, "GRID MM 1 1 ON;");
+	cmd += c;
+	// Создаём новый слой под оформление листа.  
+	sprintf(c, "LAYER 100 DocFrame;");
+	cmd += c;
+	// Присваиваем черный цвет для всего на этом слое.
+	sprintf(c, "SET COLOR_LAYER 100 BLACK;");
+	cmd += c;
+
+
+	// Создаём новый слой под текстовое оформление листа (неизменяемые данные).  
+	sprintf(c, "LAYER 101 NotChangedData;");
+	cmd += c;
+	// Присваиваем черный цвет для всего на этом слое.
+	sprintf(c, "SET COLOR_LAYER 101 BLACK;");
+	cmd += c;
+
+	// Создаём новый слой под текстовое оформление листа (изменяемые данный).  
+	sprintf(c, "LAYER 102 ChangedData;");
+	cmd += c;
+	// Присваиваем черный цвет для всего на этом слое.
+	sprintf(c, "SET COLOR_LAYER 102 BLACK;");
+	cmd += c;
+	
+	sprintf(c, "DISPLAY NONE 100 101 102;");
+	cmd += c;
+
+		sheet(S) {
+			S.wires(W) {
+				sprintf(c, "DELETE (%f %f);\n", 1.0 * (W.x1 + W.x2) / 20000, 1.0 * (W.y1+W.y2)/20000.0);
+				cmd += c;
+			}
+		}
+	
+	sprintf(c, "DISPLAY LAST;");
+	cmd += c;
+
+	// Функция определения размеров листа.
+	paper_size(papersize_select, orientation_select);
+	// Чертим лист.  
+	training_sheet();
+
+
+	// Заполняем основную надпись не изменяеммыми данными.
+	filling_forms_not_changed();
+
+
+	// Заполняем основную надпись данными изменяемыми данными.
+	filling_forms();
+
+	
+	// Возвращаем разрешение сетки к первоначальному значению.
+	sprintf(c, "GRID LAST;");
+	cmd += c;
+
+	sprintf(c, "WINDOW FIT;");
+	cmd += c;
+
+exit(cmd);
+}
+else  dlgMessageBox("Закустите данный ULP-файл в редакторе схем Schematic.", "OK");

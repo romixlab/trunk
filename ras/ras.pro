@@ -2,10 +2,13 @@ TEMPLATE = app
 
 QT += qml quick
 
-LIBS += -lpgm
+QMAKE_CXXFLAGS += -std=c++11
+INCLUDEPATH += /home/roman/Qt/5.3/gcc_64/include/QtCore/5.3.1/QtCore/private/
+
+LIBS += -lqmsgpack
 
 SOURCES += main.cpp \
-    pgmnetwork.cpp \
+    localdiscoveryservice.cpp \
     test.cpp
 
 RESOURCES += qml.qrc
@@ -16,6 +19,9 @@ QML_IMPORT_PATH =
 # Default rules for deployment.
 include(deployment.pri)
 
-HEADERS += \
-    pgmnetwork.h \
-    test.h
+HEADERS += localdiscoveryservice.h \
+    discoveryservicebase.h \
+    automation_global.h \
+    automation_export.h \
+    test.h \
+    ToCatch.h
