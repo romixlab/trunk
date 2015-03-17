@@ -15,18 +15,23 @@ signals:
     void sig(int a);
 
 
-    public slots:
-        void slot() {
-qDebug() << "normal slot called";
-        }
+public slots:
+    void slot() {
+        qDebug() << "normal slot called";
+    }
 
-        void sl(int a, const QString &b) {
-            qDebug() << "slot called" << a << b;
-        }
+    void sl(int a, const QString &b) {
+        qDebug() << "slot called" << a << b;
+    }
 
-void s(const QString &name, const QVariantList &v) {
-    qDebug() << "catch" << name << v;
-}
+    void s(const QString &name, const QVariantList &v) {
+        qDebug() << "catch" << name << v;
+
+
+    }
+    void y(const QString &str) {
+        qDebug() << str;
+    }
 };
 
 #endif // TOCATCH_H

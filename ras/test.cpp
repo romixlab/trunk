@@ -8,6 +8,7 @@ class TestPrivate {
     int catchedSignalId;
     QHash<int, QString> slotId2Name;
     QHash<QString, int> signalName2Id;
+//    QHash<QString, QVector<QMetaObject::Connection> > signalConnections;
     friend class Test;
 };
 
@@ -30,10 +31,9 @@ Test::~Test()
     delete d;
 }
 
-bool Test::addSlot(const char *slot)
+bool Test::addSlot(const QString &slot)
 {
-    QString slotName(&slot[1]);
-    if (d->slotId2Name.key(slotName, -1) != -1)
+    if (d->slotId2Name.key(slot, -1) != -1)
         return false;
 
     QDataStream istream(d->metadata);
@@ -41,8 +41,8 @@ bool Test::addSlot(const char *slot)
     QMap<QByteArray, const QMetaObject*> refs;
     builder.deserialize(istream, refs);
 
-    int metaIndex = builder.addSlot(slotName.toLocal8Bit()).index();
-    d->slotId2Name.insert(metaIndex + d->meta->methodOffset(), slotName);
+    int metaIndex = builder.addSlot(slot.toLocal8Bit()).index();
+    d->slotId2Name.insert(metaIndex + d->meta->methodOffset(), slot);
 
     if (d->meta)
         free(d->meta);
@@ -53,10 +53,9 @@ bool Test::addSlot(const char *slot)
     return true;
 }
 
-bool Test::removeSlot(const char *slot)
+bool Test::removeSlot(const QString &slot)
 {
-    QString slotName(&slot[1]);
-    if (d->slotId2Name.key(slotName, -1) == -1)
+    if (d->slotId2Name.key(slot, -1) == -1)
         return false;
 
     QDataStream istream(d->metadata);
@@ -64,8 +63,8 @@ bool Test::removeSlot(const char *slot)
     QMap<QByteArray, const QMetaObject*> refs;
     builder.deserialize(istream, refs);
 
-    int metaIndex = d->slotId2Name.key(slotName);
-    builder.removeMethod(metaIndex);
+    int metaIndex = d->slotId2Name.key(slot);
+    builder.removeMethod(metaIndex - d->meta->methodOffset());
     d->slotId2Name.remove(metaIndex);
 
     if (d->meta)
@@ -77,10 +76,9 @@ bool Test::removeSlot(const char *slot)
     return true;
 }
 
-bool Test::addSignal(const char *signal)
+bool Test::addSignal(const QString &signal)
 {
-    QString signalName(&signal[1]);
-    if (d->signalName2Id.value(signalName, -1) != -1)
+    if (d->signalName2Id.value(signal, -1) != -1)
         return false;
 
     QDataStream istream(d->metadata);
@@ -88,18 +86,15 @@ bool Test::addSignal(const char *signal)
     QMap<QByteArray, const QMetaObject*> refs;
     builder.deserialize(istream, refs);
 
-    int metaIndex = builder.addSignal(signalName.toLocal8Bit()).index()
+    int metaIndex = builder.addSignal(signal.toLocal8Bit()).index()
             + d->meta->methodOffset();
+    d->signalName2Id.insert(signal, metaIndex);
 
     if (d->meta)
         free(d->meta);
     d->meta = builder.toMetaObject();
     QDataStream ostream(&d->metadata, QIODevice::WriteOnly);
     builder.serialize(ostream);
-
-    d->signalName2Id.insert(d->meta->method(metaIndex).name(), metaIndex);
-
-qDebug() << "added sig" << d->meta->method(metaIndex).name();
 
     return true;
 }
@@ -133,6 +128,29 @@ void Test::activateSignal(const QString &signal, const QVariantList &args)
     QMetaObject::activate(this, d->meta, metaIndex - d->meta->methodOffset(), _a);
 }
 
+bool Test::removeSignal(const QString &signal)
+{
+    if (d->signalName2Id.value(signal, -1) == -1)
+        return false;
+
+    QDataStream istream(d->metadata);
+    QMetaObjectBuilder builder;
+    QMap<QByteArray, const QMetaObject*> refs;
+    builder.deserialize(istream, refs);
+
+    int metaIndex = d->signalName2Id.value(signal) - d->meta->methodOffset();
+    d->signalName2Id.remove(signal);
+    builder.removeMethod(metaIndex);
+
+    if (d->meta)
+        free(d->meta);
+    d->meta = builder.toMetaObject();
+    QDataStream ostream(&d->metadata, QIODevice::WriteOnly);
+    builder.serialize(ostream);
+
+    return true;
+}
+
 const QMetaObject *Test::metaObject() const
 {
     return d->meta;
@@ -146,7 +164,6 @@ int Test::qt_metacall(QMetaObject::Call call, int id, void **args)
 
     if (call == QMetaObject::InvokeMetaMethod) {
         int metaIndex = id + d->meta->methodOffset();
-        qDebug() << "midx" << metaIndex;
         QMetaMethod method = d->meta->method(metaIndex);
         if (!method.isValid()) {
             qWarning() << "invoked invalid method with id" << id;
@@ -156,7 +173,6 @@ int Test::qt_metacall(QMetaObject::Call call, int id, void **args)
         for (int i = 0; i < method.parameterCount(); ++i)
             vargs.append(QVariant(method.parameterType(i), args[1 + i]));
         QString catchedName = d->slotId2Name.value(metaIndex);
-        qDebug() << "ready to process:" <<  method.name() << vargs << catchedName;
         void *_a[] = { 0,
                        const_cast<void*>(reinterpret_cast<const void*>(&catchedName)),
                        const_cast<void*>(reinterpret_cast<const void*>(&vargs)) };
@@ -172,3 +188,28 @@ void *Test::qt_metacast(const char *className)
     //this object should not be castable to anything but QObject
     return QObject::qt_metacast(className);
 }
+
+//bool Test::connect(const QObject *sender, const char *signal,
+//                   const QObject *receiver, const char *member, Qt::ConnectionType type)
+//{
+//    if ((sender != this) && (receiver != this)) {
+//        qWarning() << "don't use DQObject::connect for normal connections!";
+//        return false;
+//    }
+
+//    if (sender == this) { // connection to our signal
+//        QMetaObject::Connection connection =
+//                QObject::connect(sender, signal, receiver, member, type);
+//        if (!connection)
+//            return false;
+//        d->signalConnections.insert(&signal[1], connection);
+//    }
+//}
+
+
+//void Test::disconnect_signal(const QString &signal)
+//{
+//    qDebug() << "signal" << signal << "removed, disconnecting";
+
+
+//}

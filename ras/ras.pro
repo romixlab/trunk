@@ -6,10 +6,13 @@ QMAKE_CXXFLAGS += -std=c++11
 INCLUDEPATH += /home/roman/Qt/5.3/gcc_64/include/QtCore/5.3.1/QtCore/private/
 
 LIBS += -lqmsgpack
+LIBS += -L"/home/roman/build/yami4-gpl-1.10.0/lib/" -lyamicpp -lyamicore
 
 SOURCES += main.cpp \
     localdiscoveryservice.cpp \
-    test.cpp
+    test.cpp \
+    yami.cpp \
+    automation.cpp
 
 RESOURCES += qml.qrc
 
@@ -24,4 +27,6 @@ HEADERS += localdiscoveryservice.h \
     automation_global.h \
     automation_export.h \
     test.h \
-    ToCatch.h
+    ToCatch.h \
+    yami.h \
+    automation.h

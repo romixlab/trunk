@@ -1,0 +1,38 @@
+[Eagle]
+Version="07 02 00"
+Platform="Linux"
+Serial="62191E841E-LSR-WLM-1EL"
+Globals="Globals"
+Desktop="Desktop"
+
+[Globals]
+AutoSaveProject=1
+UsedLibrary="/home/roman/git/trunk/eagle/lbr/RFM23BP.lbr"
+UsedLibrary="/home/roman/git/trunk/eagle/lbr/sim900.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Aesthetics.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-AnalogIC.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Boards.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Capacitors.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Connectors.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-DigitalIC.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-DiscreteSemi.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Displays.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Electromechanical.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-FreqCtrl.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-LED.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Passives.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-PowerIC.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-RF.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Resistors.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Retired.lbr"
+UsedLibrary="/home/roman/git/SparkFun-Eagle-Libraries/SparkFun-Sensors.lbr"
+
+[Win_1]
+Type="Control Panel"
+Loc="0 33 1279 969"
+State=1
+Number=0
+
+[Desktop]
+Screen="2560 1024"
+Window="Win_1"
