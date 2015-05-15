@@ -8,7 +8,11 @@ class GPSEphemeris
 {
 public:
     GPSEphemeris();
+    GPSEphemeris(GPSEphemeris &other);
     ~GPSEphemeris();
+
+    GPSEphemeris &operator=(const GPSEphemeris &other);
+
     bool load(const QString &fileName);
 
     enum class Flag {
@@ -23,39 +27,40 @@ public:
     };
     Q_DECLARE_FLAGS(Flags, Flag)
 
-    int     sv();
-    int     tow();
-    Flags   flags();
-    int     iodc();
-    int     toc();
-    int     ura();
-    int     healthS();
-    int     wn();
-    double  tgd();
-    double  af2();
-    double  af1();
-    double  af0();
-    int     toe();
-    int     iode();
-    double  rootA();
-    double  ecc();
-    double  m0();
-    double  omega0();
-    double  inc0();
-    double  argPer();
-    double  deln();
-    double  omegaDot();
-    double  incDot();
-    double  crc();
-    double  crs();
-    double  cuc();
-    double  cus();
-    double  cic();
-    double  cis();
-    double  cs();
+    int     sv() const;
+    int     tow() const;
+    Flags   flags() const;
+    int     iodc() const;
+    int     toc() const;
+    int     ura() const;
+    int     healthS() const;
+    int     wn() const;
+    double  tgd() const;
+    double  af2() const;
+    double  af1() const;
+    double  af0() const;
+    int     toe() const;
+    int     iode() const;
+    double  rootA() const;
+    double  ecc() const;
+    double  m0() const;
+    double  omega0() const;
+    double  inc0() const;
+    double  argPer() const;
+    double  deln() const;
+    double  omegaDot() const;
+    double  incDot() const;
+    double  crc() const;
+    double  crs() const;
+    double  cuc() const;
+    double  cus() const;
+    double  cic() const;
+    double  cis() const;
+    double  cs() const;
 
 private:
-    GPSEphemerisPrivate *d_ptr;
+    void detach();
+    GPSEphemerisPrivate * d_ptr;
     Q_DECLARE_PRIVATE(GPSEphemeris)
 };
 

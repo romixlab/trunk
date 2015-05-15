@@ -1,4 +1,5 @@
 #include "gpsephemeris.h"
+#include <QAtomicInt>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -7,6 +8,8 @@
 
 class GPSEphemerisPrivate {
 public:
+    QAtomicInt ref;
+
     int sv;
     int tow;
     GPSEphemeris::Flags flags;
@@ -42,13 +45,72 @@ public:
 GPSEphemeris::GPSEphemeris() :
     d_ptr(new GPSEphemerisPrivate)
 {
+    Q_D(GPSEphemeris);
+    d->ref.ref();
+}
+
+GPSEphemeris::GPSEphemeris(GPSEphemeris &other)
+{
+    d_ptr = other.d_ptr;
+    d_ptr->ref.ref();
 }
 
 GPSEphemeris::~GPSEphemeris()
 {
-    if (d_ptr) {
+    if (d_ptr->ref == 1) {
         delete d_ptr;
-        d_ptr = 0;
+    } else {
+        d_ptr->ref.deref();
+    }
+}
+
+GPSEphemeris &GPSEphemeris::operator=(const GPSEphemeris &other)
+{
+    d_ptr->ref.deref();
+    if (d_ptr->ref == 0)
+        delete d_ptr;
+    d_ptr = other.d_ptr;
+    return *this;
+}
+
+void GPSEphemeris::detach()
+{
+    if (d_ptr->ref != 1) {
+        d_ptr->ref.deref();
+        GPSEphemerisPrivate *new_dptr = new GPSEphemerisPrivate;
+
+        new_dptr->sv = d_ptr->sv;
+        new_dptr->tow = d_ptr->tow;
+        new_dptr->flags = d_ptr->flags;
+        new_dptr->iodc = d_ptr->iodc;
+        new_dptr->toc = d_ptr->toc;
+        new_dptr->ura = d_ptr->ura;
+        new_dptr->healthS = d_ptr->healthS;
+        new_dptr->wn = d_ptr->wn;
+        new_dptr->tgd = d_ptr->tgd;
+        new_dptr->af2 = d_ptr->af2;
+        new_dptr->af1 = d_ptr->af1;
+        new_dptr->af0 = d_ptr->af0;
+        new_dptr->toe = d_ptr->toe;
+        new_dptr->iode = d_ptr->iode;
+        new_dptr->rootA = d_ptr->rootA;
+        new_dptr->ecc = d_ptr->ecc;
+        new_dptr->m0 = d_ptr->m0;
+        new_dptr->omega0 = d_ptr->omega0;
+        new_dptr->inc0 = d_ptr->inc0;
+        new_dptr->argPer = d_ptr->argPer;
+        new_dptr->deln = d_ptr->deln;
+        new_dptr->omegaDot = d_ptr->omegaDot;
+        new_dptr->incDot = d_ptr->incDot;
+        new_dptr->crc = d_ptr->crc;
+        new_dptr->crs = d_ptr->crs;
+        new_dptr->cuc = d_ptr->cuc;
+        new_dptr->cus = d_ptr->cus;
+        new_dptr->cic = d_ptr->cic;
+        new_dptr->cis = d_ptr->cis;
+        new_dptr->cs = d_ptr->cs;
+
+        d_ptr = new_dptr;
     }
 }
 
@@ -98,182 +160,182 @@ bool GPSEphemeris::load(const QString &fileName)
     return true;
 }
 
-int GPSEphemeris::sv()
+int GPSEphemeris::sv() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->sv;
 }
 
-int GPSEphemeris::tow()
+int GPSEphemeris::tow() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->tow;
 }
 
-GPSEphemeris::Flags GPSEphemeris::flags()
+GPSEphemeris::Flags GPSEphemeris::flags() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->flags;
 }
 
-int GPSEphemeris::iodc()
+int GPSEphemeris::iodc() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->iodc;
 }
 
-int GPSEphemeris::toc()
+int GPSEphemeris::toc() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->toc;
 }
 
-int GPSEphemeris::ura()
+int GPSEphemeris::ura() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->ura;
 }
 
-int GPSEphemeris::healthS()
+int GPSEphemeris::healthS() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->healthS;
 }
 
-int GPSEphemeris::wn()
+int GPSEphemeris::wn() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->wn;
 }
 
-double GPSEphemeris::tgd()
+double GPSEphemeris::tgd() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->tgd;
 }
 
-double GPSEphemeris::af2()
+double GPSEphemeris::af2() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->af2;
 }
 
-double GPSEphemeris::af1()
+double GPSEphemeris::af1() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->af1;
 }
 
-double GPSEphemeris::af0()
+double GPSEphemeris::af0() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->af0;
 }
 
-int GPSEphemeris::toe()
+int GPSEphemeris::toe() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->toe;
 }
 
-int GPSEphemeris::iode()
+int GPSEphemeris::iode() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->iode;
 }
 
-double GPSEphemeris::rootA()
+double GPSEphemeris::rootA() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->rootA;
 }
 
-double GPSEphemeris::ecc()
+double GPSEphemeris::ecc() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->ecc;
 }
 
-double GPSEphemeris::m0()
+double GPSEphemeris::m0() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->m0;
 }
 
-double GPSEphemeris::omega0()
+double GPSEphemeris::omega0() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->omega0;
 }
 
-double GPSEphemeris::inc0()
+double GPSEphemeris::inc0() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->inc0;
 }
 
-double GPSEphemeris::argPer()
+double GPSEphemeris::argPer() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->argPer;
 }
 
-double GPSEphemeris::deln()
+double GPSEphemeris::deln() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->deln;
 }
 
-double GPSEphemeris::omegaDot()
+double GPSEphemeris::omegaDot() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->omegaDot;
 }
 
-double GPSEphemeris::incDot()
+double GPSEphemeris::incDot() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->incDot;
 }
 
-double GPSEphemeris::crc()
+double GPSEphemeris::crc() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->crc;
 }
 
-double GPSEphemeris::crs()
+double GPSEphemeris::crs() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->crs;
 }
 
-double GPSEphemeris::cuc()
+double GPSEphemeris::cuc() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->cuc;
 }
 
-double GPSEphemeris::cus()
+double GPSEphemeris::cus() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->cus;
 }
 
-double GPSEphemeris::cic()
+double GPSEphemeris::cic() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->cic;
 }
 
-double GPSEphemeris::cis()
+double GPSEphemeris::cis() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->cis;
 }
 
-double GPSEphemeris::cs()
+double GPSEphemeris::cs() const
 {
-    Q_D(GPSEphemeris);
+    Q_D(const GPSEphemeris);
     return d->cs;
 }

@@ -17,7 +17,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    gpsephemeris.cpp
+    gpsephemeris.cpp \
+    gpssolver.cpp
 
 HEADERS += \
-    gpsephemeris.h
+    gpsephemeris.h \
+    gpssolver.h
