@@ -3,5 +3,7 @@
         <file>main.qml</file>
         <file>MainForm.ui.qml</file>
         <file>VkMessage.qml</file>
+        <file>Player.qml</file>
+        <file>Panel.qml</file>
     </qresource>
 </RCC>

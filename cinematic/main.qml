@@ -24,8 +24,17 @@ ApplicationWindow {
         }
     }
 
-    VkMessage {
-        anchors.centerIn: parent
+
+    Panel {
+        x: 100
+        onSend: console.log(imgSource)
     }
+
+    Panel {
+        x: 600
+        deploy: true
+    }
+
+
 
 }
