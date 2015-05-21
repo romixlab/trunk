@@ -3,11 +3,12 @@ import QtQuick.Controls 1.3
 import QtQuick.Window 2.2
 import QtQuick.Dialogs 1.2
 import QtQuick.Controls.Styles 1.2
+import QtMultimedia 5.0
 
 ApplicationWindow {
     title: qsTr("Hello World")
-    width: 640
-    height: 480
+    width: 1240
+    height: 800
     visible: true
 
     menuBar: MenuBar {
@@ -25,14 +26,52 @@ ApplicationWindow {
     }
 
 
-    Panel {
-        x: 100
-        onSend: console.log(imgSource)
+    Window {
+        id: sendWindow
+        width: 300
+        height: 500
+        data: Panel {
+            width: sendWindow.width
+            height: sendWindow.height
+            onDeployMessage: {
+                console.log("append")
+                deployed.message(text, img, left)
+
+            }
+
+        }
+        visible:true
+    }
+
+
+    Video {
+        id: video
+        anchors.fill: parent
+        MouseArea {
+            anchors.fill: parent
+            onClicked: videoDialog.open()
+        }
+    }
+
+    FileDialog {
+        id: videoDialog
+        onAccepted: {
+            video.source = videoDialog.fileUrl
+            video.play()
+        }
     }
 
     Panel {
-        x: 600
+        id: deployed
         deploy: true
+
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            rightMargin: 30
+            bottomMargin: 50
+        }
+
     }
 
 

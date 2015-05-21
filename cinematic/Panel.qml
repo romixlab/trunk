@@ -11,7 +11,7 @@ Item {
     property bool deploy
 
     ListModel {
-        id: model
+        id: messagesModel
         ListElement {
             imgSource: ""
             msgText: "йукйукукуц"
@@ -19,15 +19,17 @@ Item {
         }
     }
 
-    function message(text, img, left) {
-        model.append({imgSource: img, msgText: text, left: left})
+    function message(text, img, isleft) {
+        messagesModel.append({imgSource: img, msgText: text, leftMessage: isleft})
+        console.log("appending", isleft)
     }
 
-    signal send(var text, var img, var left)
+    signal deployMessage(var text, var img, var left)
 
     Component {
         id: msgDelegate
         Item {
+            id: delegate
             width: 300
             height: 68
 
@@ -45,7 +47,7 @@ Item {
 
                 Button {
                     id: photoButton
-                    visible: root.deploy
+                    visible: !root.deploy
                     anchors.centerIn: parent
                     width: 32
                     text: "..."
@@ -85,14 +87,12 @@ Item {
             }
             FileDialog {
                 id: fileDialog
-                onAccepted: imgSource = fileDialog.fileUrl
+                onAccepted: photo.source = fileDialog.fileUrl
             }
         }
     }
 
     Rectangle {
-        x: 100
-        y: 100
         id: headerRect
         width: 300
         height: 28
@@ -132,6 +132,7 @@ Item {
         }
         height: 400
         color: "white"
+        opacity: 0.9
         border.color: "steelblue"
         border.width: 1
 
@@ -139,16 +140,17 @@ Item {
             clip: true
             anchors.fill: parent
             ListView {
+                id: listView
                 anchors.fill: parent
                 anchors.margins: 10
-                model: model
+                model: messagesModel
                 delegate: msgDelegate
                 spacing: 15
             }
         }
     }
     Rectangle {
-        visible: root.deploy
+        visible: !root.deploy
         anchors {
             left: headerRect.left
             right: headerRect.right
@@ -175,7 +177,7 @@ Item {
             }
             text: "Отправить"
             onClicked: {
-                model.append({msgText: sendTextArea.text, leftMessage: true})
+                messagesModel.append({msgText: sendTextArea.text, leftMessage: true})
             }
         }
         Button {
@@ -187,7 +189,7 @@ Item {
             }
             text: "Отправить"
             onClicked: {
-                model.append({msgText: sendTextArea.text, leftMessage: false})
+                messagesModel.append({msgText: sendTextArea.text, leftMessage: false})
             }
         }
         Button {
@@ -196,9 +198,10 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "На видео"
             onClicked: {
-                console.log("asasd")
-                console.log(sendTextArea.text, model.get(model.count - 1)["imgSource"])
-//                root.send(sendTextArea.text, model.get(model.count - 1).imgSource, false)
+                var m = messagesModel.get(messagesModel.count - 1)
+                console.log(m.msgText)
+                root.deployMessage(m.msgText, "", m.leftMessage)
+                messagesModel.remove(messagesModel.count - 1)
             }
         }
     }
