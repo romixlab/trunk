@@ -1,65 +1,69 @@
 #include <QCoreApplication>
 #include "gpsephemeris.h"
 #include "gpssolver.h"
-#include <iostream>
-#include <ios>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
-
-using namespace std;
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    cout << "-=- GPS Solver v0.0 -=-" << endl;
+    qDebug() << "-=- GPS Solver v0.1 -=-";
 
-    GPSEphemeris ephemeris;
-    cout << "Loading ephemeris.json ...";
-    bool ok = ephemeris.load("ephemeris.json");
-    cout << (ok == true ? "ok" : "error") << endl;
-    if (!ok)
-        return -1;
-
-    GPSSolver solver;
-    solver.setEphemeris(ephemeris);
-
-    cout << "Loading data.json ...";
+    qDebug() << "Loading data.json... ";
     QFile file("data.json");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        cout << file.errorString().toLocal8Bit().constBegin();
+        qDebug() << file.errorString();
         return -1;
     } else {
-        cout << "ok" << endl;
+        qDebug() << "ok";
     }
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     file.close();
 
     QJsonObject g = doc.object();
-    solver.setTime(g["time"].toDouble());
-    solver.setDelay(g["delay"].toDouble());
+    QVariantMap satellites = g.toVariantMap();
 
-    cout.precision(14);
-    cout.setf(ios::fixed);
+    GPSEphemeris ephemeris;
+    GPSSolver solver;
 
-    cout << "tPre:" << solver.tPre() << endl;
-    cout << "tSv:" << solver.tSv() << endl;
-    cout << "tGPS:" << solver.tGPS() << endl;
-    cout << "tK:" << solver.tK() << endl;
-    cout << "n:" << solver.n() << endl;
-    cout << "mK:" << solver.mK() << endl;
-    cout << "eK:" << solver.eK() << endl;
-    cout << "qK:" << solver.qK() << endl;
-    cout << "fK:" << solver.fK() << endl;
-    cout << "uK:" << solver.uK() << endl;
-    cout << "rK:" << solver.rK() << endl;
-    cout << "iK:" << solver.iK() << endl;
-    cout << "omegaK:" << solver.omegaK() << endl;
-    QVector<double> coord = solver.coord();
-    cout << "x y z:" << endl << coord[0] << endl << coord[1] << endl << coord[2];
+    qDebug() << "time:" << qSetRealNumberPrecision(20) << satellites["time"].toDouble();
+    solver.setTime(satellites["time"].toDouble());
 
-    cout.flush();
+    QMapIterator<QString, QVariant> it(satellites);
+    while (it.hasNext()) {
+        it.next();
+        if (it.key() == "time")
+            continue;
+        qDebug() << endl << it.key();
+        ephemeris.load(it.value().toMap()["ephemeris"].toMap());
+        solver.setEphemeris(ephemeris);
+        solver.setDelay(it.value().toMap()["delay"].toDouble());
+
+
+
+        if (a.arguments().contains("d")) {
+            qDebug() << qSetRealNumberPrecision(20) << "tPre:" << solver.tPre();
+            qDebug() << qSetRealNumberPrecision(20) << "tSv:" << solver.tSv();
+            qDebug() << qSetRealNumberPrecision(20) << "tGPS:" << solver.tGPS();
+            qDebug() << qSetRealNumberPrecision(20) << "tK:" << solver.tK();
+            qDebug() << qSetRealNumberPrecision(20) << "n:" << solver.n();
+            qDebug() << qSetRealNumberPrecision(20) << "mK:" << solver.mK();
+            qDebug() << qSetRealNumberPrecision(20) << "eK:" << solver.eK();
+            qDebug() << qSetRealNumberPrecision(20) << "qK:" << solver.qK();
+            qDebug() << qSetRealNumberPrecision(20) << "fK:" << solver.fK();
+            qDebug() << qSetRealNumberPrecision(20) << "uK:" << solver.uK();
+            qDebug() << qSetRealNumberPrecision(20) << "rK:" << solver.rK();
+            qDebug() << qSetRealNumberPrecision(20) << "iK:" << solver.iK();
+            qDebug() << qSetRealNumberPrecision(20) << "omegaK:" << solver.omegaK();
+        }
+        QVector<double> coord = solver.coord();
+        qDebug() << qSetRealNumberPrecision(20) << "x y z:" << coord[0] << coord[1] << coord[2];
+        coord = solver.vel();
+        qDebug() << qSetRealNumberPrecision(20) << "vx vy vz:" << coord[0] << coord[1] << coord[2];
+    }
 
     return 0;
     //return a.exec();

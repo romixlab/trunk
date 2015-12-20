@@ -1,6 +1,9 @@
 #ifndef GPSEPHEMERIS_H
 #define GPSEPHEMERIS_H
+
 #include <QtGlobal>
+#include <QJsonObject>
+#include <QSharedDataPointer>
 
 class GPSEphemerisPrivate;
 
@@ -13,7 +16,7 @@ public:
 
     GPSEphemeris &operator=(const GPSEphemeris &other);
 
-    bool load(const QString &fileName);
+    bool load(const QVariantMap &ephemeris);
 
     enum class Flag {
             F_0 = 1,
@@ -59,9 +62,7 @@ public:
     double  cs() const;
 
 private:
-    void detach();
-    GPSEphemerisPrivate * d_ptr;
-    Q_DECLARE_PRIVATE(GPSEphemeris)
+    QSharedDataPointer<GPSEphemerisPrivate> d;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(GPSEphemeris::Flags)

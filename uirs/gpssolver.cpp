@@ -49,7 +49,7 @@ void GPSSolver::setEphemeris(const GPSEphemeris &ephemeris)
 int GPSSolver::tPre() const
 {
     Q_D(const GPSSolver);
-    return d->t + 86400 * ((int)((d->g.tow() - d->t) / 86400));
+    return d->t / 1000 + 86400 * ((int)((d->g.tow() - d->t / 1000) / 86400));
 }
 
 double GPSSolver::tSv() const
@@ -61,7 +61,7 @@ double GPSSolver::tSv() const
 double GPSSolver::tGPS() const
 {
     Q_D(const GPSSolver);
-    double deltaTr = Const::C * d->g.ecc() * d->g.rootA() * sin(d->g.m0() * M_PI);
+    double deltaTr = Const::C * d->g.ecc() * d->g.rootA() * sin(d->g.m0());
     return tSv() -
             d->g.af0() +
             d->g.af1() * (tSv() - d->g.toc()) +
@@ -78,13 +78,13 @@ double GPSSolver::tK() const
 double GPSSolver::n() const
 {
     Q_D(const GPSSolver);
-    return sqrt(Const::M) / pow(d->g.rootA(), 3) + d->g.deln() * M_PI;
+    return sqrt(Const::M) / pow(d->g.rootA(), 3) + d->g.deln();
 }
 
 double GPSSolver::mK() const
 {
     Q_D(const GPSSolver);
-    return d->g.m0() * M_PI + n() * tK();
+    return d->g.m0() + n() * tK();
 }
 
 double GPSSolver::eK() const
@@ -106,13 +106,13 @@ double GPSSolver::qK() const
 {
     Q_D(const GPSSolver);
     double ek = eK();
-    return (sqrt(1 - d->g.ecc() * d->g.ecc()) * sin(ek)) / (cos(ek) - d->g.ecc());
+    return atan( (sqrt(1 - d->g.ecc() * d->g.ecc()) * sin(ek)) / (cos(ek) - d->g.ecc()) );
 }
 
 double GPSSolver::fK() const
 {
     Q_D(const GPSSolver);
-    return qK() + d->g.argPer() * M_PI;
+    return qK() + d->g.argPer();
 }
 
 double GPSSolver::uK() const
@@ -131,24 +131,47 @@ double GPSSolver::rK() const
 double GPSSolver::iK() const
 {
     Q_D(const GPSSolver);
-    return d->g.inc0() * M_PI +
+    return d->g.inc0() +
             d->g.cic() * cos(2 * fK()) + d->g.cis() * sin(2 * fK()) +
-            d->g.incDot() * M_PI * tK();
+            d->g.incDot() * tK();
+}
+
+double GPSSolver::vrK() const
+{
+    Q_D(const GPSSolver);
+    return (sqrt(Const::M) / d->g.rootA()) * (d->g.ecc() * sin(qK()) / sqrt(1 - d->g.ecc() * d->g.ecc()));
+}
+
+double GPSSolver::vuK() const
+{
+    Q_D(const GPSSolver);
+    return (sqrt(Const::M) / d->g.rootA()) * ((1 + d->g.ecc() * cos(qK())) / sqrt(1 - d->g.ecc() * d->g.ecc()));
 }
 
 double GPSSolver::omegaK() const
 {
     Q_D(const GPSSolver);
-    return d->g.omega0() * M_PI + (d->g.omegaDot() * M_PI - Const::W_3) * tK() -
+    return d->g.omega0() + (d->g.omegaDot() - Const::W_3) * tK() -
             Const::W_3 * d->g.toe();
 }
 
 QVector<double> GPSSolver::coord() const
 {
-    Q_D(const GPSSolver);
     double x = rK() * (cos(uK()) * cos(omegaK()) - sin(uK()) * sin(omegaK()) * cos(iK()));
     double y = rK() * (cos(uK()) * sin(omegaK()) + sin(uK()) * cos(omegaK()) * cos(iK()));
     double z = rK() * sin(uK()) * sin(iK());
+    return (QVector<double>() << x << y << z);
+}
+
+QVector<double> GPSSolver::vel() const
+{
+    double x = vrK() * (cos(uK()) * cos(omegaK()) - sin(uK()) * sin(omegaK()) * cos(iK())) -
+               vuK() * (sin(uK()) * cos(omegaK()) + cos(uK()) * sin(omegaK()) * cos(iK())) +
+               Const::W_3 * rK() * (cos(uK()) * sin(omegaK()) + sin(uK()) * cos(omegaK()) * cos(iK()));
+    double y = vrK() * (cos(uK()) * sin(omegaK()) + sin(uK()) * cos(omegaK()) * cos(iK())) -
+               vuK() * (sin(uK()) * sin(omegaK()) - cos(uK()) * cos(omegaK()) * cos(iK())) -
+               Const::W_3 * rK() * (cos(uK()) * cos(omegaK()) - sin(uK()) * sin(omegaK()) * cos(iK()));
+    double z = vrK() * sin(uK()) * sin(iK()) + vuK() * cos(uK()) * sin(iK());
     return (QVector<double>() << x << y << z);
 }
 

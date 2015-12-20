@@ -29,9 +29,11 @@ public:
     double uK() const;
     double rK() const;
     double iK() const;
+    double vrK() const;
+    double vuK() const;
     double omegaK() const;
     QVector<double> coord() const;
-
+    QVector<double> vel() const;
 
 private:
     GPSSolverPrivate * const d_ptr;
